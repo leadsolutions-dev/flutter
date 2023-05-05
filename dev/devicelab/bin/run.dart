@@ -62,9 +62,6 @@ Future<void> main(List<String> rawArgs) async {
   /// Path to write test results to.
   final String? resultsPath = args['results-file'] as String?;
 
-  /// Use an emulator for this test if it is an android test.
-  final bool useEmulator = (args['use-emulator'] as bool?) ?? false;
-
   if (args.wasParsed('list')) {
     for (int i = 0; i < taskNames.length; i++) {
       print('${(i + 1).toString().padLeft(3)} - ${taskNames[i]}');
@@ -110,7 +107,6 @@ Future<void> main(List<String> rawArgs) async {
       gitBranch: gitBranch,
       luciBuilder: luciBuilder,
       resultsPath: resultsPath,
-      useEmulator: useEmulator,
     );
   }
 }
@@ -322,11 +318,6 @@ ArgParser createArgParser(List<String> taskNames) {
       help: 'Whether to send a SIGKILL signal to any Dart processes that are still '
             'running when a task is completed. If any Dart processes are terminated '
             'in this way, the test is considered to have failed.',
-    )
-    ..addFlag(
-      'use-emulator',
-      help: 'If this is an android test, use an emulator to run the test instead of '
-            'a physical device.'
     )
     ..addMultiOption(
       'test',

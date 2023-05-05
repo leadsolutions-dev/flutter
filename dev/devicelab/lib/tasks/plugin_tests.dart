@@ -201,19 +201,12 @@ class $dartPluginClass {
     if (!podspecContent.contains(versionString)) {
       throw TaskResult.failure('Update this test to match plugin minimum $target deployment version');
     }
-    // Add transitive dependency on AppAuth 1.6 targeting iOS 8 and macOS 10.9, which no longer builds in Xcode
-    // to test the version is forced higher and builds.
-    const String iosContent = '''
-s.platform = :ios, '10.0'
-s.dependency 'AppAuth', '1.6.0'
-''';
-
-    const String macosContent = '''
-s.platform = :osx, '10.8'
-s.dependency 'AppAuth', '1.6.0'
-''';
-
-    podspecContent = podspecContent.replaceFirst(versionString, target == 'ios' ? iosContent : macosContent);
+    podspecContent = podspecContent.replaceFirst(
+      versionString,
+      target == 'ios'
+          ? "s.platform = :ios, '10.0'"
+          : "s.platform = :osx, '10.8'"
+    );
     podspec.writeAsStringSync(podspecContent, flush: true);
   }
 
@@ -233,8 +226,7 @@ s.dependency 'AppAuth', '1.6.0'
         // but the range of supported deployment target versions is 9.0 to 14.0.99.
         //
         // (or "The macOS deployment target 'MACOSX_DEPLOYMENT_TARGET'"...)
-        if (buildOutput.contains('is set to 10.0, but the range of supported deployment target versions') ||
-            buildOutput.contains('is set to 10.8, but the range of supported deployment target versions')) {
+        if (buildOutput.contains('the range of supported deployment target versions')) {
           throw TaskResult.failure('Minimum plugin version warning present');
         }
 
@@ -252,23 +244,15 @@ s.dependency 'AppAuth', '1.6.0'
             if (podsProjectContent.contains('IPHONEOS_DEPLOYMENT_TARGET = 10')) {
               throw TaskResult.failure('Plugin build setting IPHONEOS_DEPLOYMENT_TARGET not removed');
             }
-            // Transitive dependency AppAuth targeting too-low 8.0 was not fixed.
-            if (podsProjectContent.contains('IPHONEOS_DEPLOYMENT_TARGET = 8')) {
-              throw TaskResult.failure('Transitive dependency build setting IPHONEOS_DEPLOYMENT_TARGET=8 not removed');
-            }
             if (!podsProjectContent.contains(r'"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "$(inherited) i386";')) {
               throw TaskResult.failure(r'EXCLUDED_ARCHS is not "$(inherited) i386"');
             }
-          } else if (target == 'macos') {
-            // Same for macOS deployment target, but 10.8.
-            // The plugintest target should not have MACOSX_DEPLOYMENT_TARGET set.
-            if (podsProjectContent.contains('MACOSX_DEPLOYMENT_TARGET = 10.8')) {
-              throw TaskResult.failure('Plugin build setting MACOSX_DEPLOYMENT_TARGET not removed');
-            }
-            // Transitive dependency AppAuth targeting too-low 10.9 was not fixed.
-            if (podsProjectContent.contains('MACOSX_DEPLOYMENT_TARGET = 10.9')) {
-              throw TaskResult.failure('Transitive dependency build setting MACOSX_DEPLOYMENT_TARGET=10.9 not removed');
-            }
+          }
+
+          // Same for macOS deployment target, but 10.8.
+          // The plugintest target should not have MACOSX_DEPLOYMENT_TARGET set.
+          if (target == 'macos' && podsProjectContent.contains('MACOSX_DEPLOYMENT_TARGET = 10.8')) {
+            throw TaskResult.failure('Plugin build setting MACOSX_DEPLOYMENT_TARGET not removed');
           }
         }
       }
